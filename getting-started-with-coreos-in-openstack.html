@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en" prefix="og: http://ogp.me/ns#">
+	<head>
+		<link href="http://gmpg.org/xfn/11" rel="profile">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta http-equiv="content-type" content="text/html; charset=utf-8">
+		<link rel="shortcut icon" href="/images/favicon.ico">
+		<!-- Metadata -->
+	<meta name="description" content="">
+	<meta property="og:description" content="">
+	<meta property="og:title" content="Getting Started with coreos in OpenStack" />
+	<meta property="og:type" content="article" />
+	<meta property="og:url" content="http://rajalokan.github.io/getting-started-with-coreos-in-openstack.html" />
+		<meta property="og:image" content="http://rajalokan.github.io/images/rajalokan.jpg" />
+
+		<!-- Enable responsiveness on mobile devices-->
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+		<title>
+Getting Started with coreos in OpenStack
+ - Alok Kumar		</title>
+
+		<!-- CSS -->
+		<link href="//fonts.googleapis.com/" rel="dns-prefetch">
+		<link href="//fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic|Abril+Fatface|PT+Sans:400,400italic,700&amp;subset=latin,latin-ext" rel="stylesheet">
+
+		<link rel="stylesheet" href="http://rajalokan.github.io/theme/css/poole.css" />
+		<link rel="stylesheet" href="http://rajalokan.github.io/theme/css/hyde.css" />
+		<link rel="stylesheet" href="http://rajalokan.github.io/theme/css/syntax.css" />
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+		<!-- RSS -->
+		<link rel="alternate" type="application/rss+xml" title="RSS" href="/atom.xml">
+	</head>
+
+	<body class="theme-base-0d">
+<div class="sidebar">
+	<div class="container sidebar-sticky">
+		<div class="sidebar-about">
+
+			<h1>
+				<a href="/">
+					<img class="profile-picture" src="http://rajalokan.github.io/images/rajalokan.jpg">
+					@rajalokan
+				</a>
+			</h1>
+			<p class="lead">Alok Kumar</p>
+			<p class="bio"> </p>
+			<p></p>
+		</div>
+		<nav class="sidebar-nav">
+					<a class="sidebar-nav-item" href="mailto:rajalokan@gmail.com">
+						<i class="fa fa-envelope"></i>
+					</a>
+					<a class="sidebar-nav-item" target="_blank" href="https://twitter.com/rajalokan">
+						<i class="fa fa-twitter"></i>
+					</a>
+					<a class="sidebar-nav-item" target="_blank" href="https://github.com/rajalokan">
+						<i class="fa fa-github"></i>
+					</a>
+					<a class="sidebar-nav-item" target="_blank" href="https://www.linkedin.com/in/alok-kumar-947b838/">
+						<i class="fa fa-linkedin"></i>
+					</a>
+			<a class="sidebar-nav-item" href="">
+				<i class="fa fa-feed"></i>
+			</a>
+		</nav>
+	</div>
+</div>		<div class="content container">
+<div class="post">
+	<h1 class="post-title">Getting Started with coreos in OpenStack</h1>
+	<span class="post-date">Thu 13 August 2015</span>
+	<div class="alert alert-primary" role="alert" style="color: #004085; background-color: #eff7ff; border-color: #b8daff; position: relative; padding: 0.75rem 1.25rem; margin-bottom: 1.5rem;">
+Reblogged from my blog written for <a href="https://aptira.com/" style="color: #004085; text-decoration: underline;">@aptira</a> at <a href="https://aptira.com/getting-started-with-coreos-on-openstack/" style="color: #004085; text-decoration: underline;">getting started with coreos on openstack</a>.
+</div>
+
+<p>CoreOS is an open-source lightweight operating system based on the Linux kernel and is designed to provide infrastructure for clustered deployments.</p>
+<p>Microservices architecture have their advantages. In case you are building/managing your stack as containerized microservices, CoreOS is the perfect operating system. CoreOS provides only the minimal functionality required for deploying applications inside software containers, together with built-in mechanisms for service discovery and configuration sharing.</p>
+<p>Getting started with coreos on openstack (using HEAT)This blog post shares my experiences while learning the basics of CoreOS on an OpenStack infrastructure. On completion of the article, we will have a three node cluster comprised of one control node and two worker nodes. Provisioning of the cluster will be done using OpenStack Heat templates.</p>
+<p>On right is a simple graphics of our end cluster setup.</p>
+<p>The code snippets used in the post are available in my public github account https://github.com/rajalokan/coreos-openstack-beginner for reference.
+<img alt="getting_started_with_coreos" src="images/getting_started_with_coreos.png"></p>
+<h2>PREREQUISITES:</h2>
+<p>To follow this tutorial, we need to install some binaries on the local machine.</p>
+<h3>ETCDCTL</h3>
+<p>etcdctl is a command line client for etcd. CoreOS’s etcd is a distributed, consistent key-value store for shared configuration and service discovery.</p>
+<p>Our control node will have the etcd service running, so on the local machine we need the etcd client installed in order to talk to the CoreOS cluster. We can install this in one step.</p>
+<div class="highlight"><pre><span></span><code>$ curl -L  https://github.com/coreos/etcd/releases/download/v2.1.1/etcd-v2.1.1-linux-amd64.tar.gz -o /tmp/etcd-v2.1.1-linux-amd64.tar.gz
+$ tar xzvf /tmp/etcd-v2.1.1-linux-amd64.tar.gz -C /tmp/
+$ mv /tmp/etcd-v2.1.1-linux-adm64/etcdctl /usr/local/bin <span class="o">&amp;&amp;</span> chmod +x /usr/local/bin/etcdctl
+</code></pre></div>
+
+
+<p>Make sure to add /usr/local/bin to the system PATH or call it directly using <code>/usr/local/bin/etcdctl</code>.</p>
+<h3>fleetctl</h3>
+<p>fleet ties together systemd and etcd into a simple distributed init system. Think of it as an extension of systemd that operates at the cluster level instead of at the machine level.</p>
+<p>fleet provides a command-line tool called <code>fleetctl</code>. We will use this to communicate with our cluster. To install, run the following commands.</p>
+<div class="highlight"><pre><span></span><code>$ curl -L https://github.com/coreos/fleet/releases/download/v0.11.2/fleet-v0.11.2-linux-amd64.tar.gz -o fleet-v0.11.2-linux-amd64
+$ tar xzvf /tmp/fleet-v0.11.2-linux-amd64 -C /tmp/
+$ mv /tmp/fleet-v0.11.2-linux-amd64/fleetctl /usr/local/bin <span class="o">&amp;&amp;</span> chmod +x /usr/local/bin/fleetctl
+</code></pre></div>
+
+
+<h3>python-heatclient &amp; python-glanceclient</h3>
+<p>We will use the OpenStack heat client to spin up a VM and the OpenStack glance client to create a CoreOS image in our OpenStack infrastructure. We can install both of these client tools using pip:</p>
+<div class="highlight"><pre><span></span><code>$ pip install python-heatclient python-glanceclient
+</code></pre></div>
+
+
+<p>Next, we want to add the stable CoreOS image to glance</p>
+<div class="highlight"><pre><span></span><code>$ wget http://stable.release.core-os.net/amd64-usr/current/coreos_production_openstack_image.img.bz2
+$ bunzip2 coreos_production_openstack_image.img.bz2
+$ glance image-create –name CoreOS –container-format bare  –disk-format qcow2  –file coreos_production_openstack_image.img
+$ glance image-list
+</code></pre></div>
+
+
+<p>Finally, we should verify that all the binaries are installed correctly. Each of the following commands <code>fleetctl –version</code> , <code>etcdctl –version</code>, <code>heat –version</code> &amp; <code>glance –version</code> should return output with the version of the binary installed.</p>
+<h2>START A SINGLE NODE CLUSTER</h2>
+<p>Lets keep things simple and start by spinning up a single node cluster (only the control node). This will start a single CoreOS node with fleet and etcd running on it.</p>
+<h3>Start the cluster</h3>
+<p>Starting a cluster through HEAT requires three parameters.</p>
+<h4>Discovery token:</h4>
+<p>For a group of CoreOS machines to form a cluster, their etcd instances need to be connected. We are creating a discovery token for single node to help connect etcd instances together by storing a list of peer addresses, metadata and the initial size of the cluster under a unique address, known as the discovery URL.</p>
+<p>In our example, we are using CoreOS’s discovery service to generate token ( curl -q https://discovery.etcd.io/new?size=1). We can as well use our own mechanism to generate token.</p>
+<h4>public network uuid</h4>
+<p>Pass your unique identification of your public network of your OpenStack infrastructure. This is needed to create router inside public network.</p>
+<h4>key_name</h4>
+<p>Also provide your nova keypair’s key_name for ssh access.</p>
+<p>The exact command to start a coreos cluster is shown below:</p>
+<div class="highlight"><pre><span></span><code>$ heat stack-create -f heat-template-control.yaml -P <span class="nv">discovery_token_url</span><span class="o">=</span><span class="sb">`</span>curl -q https://discovery.etcd.io/new?size<span class="o">=</span><span class="m">1</span><span class="sb">`</span> -P <span class="nv">public_network_uuid</span><span class="o">=</span>87cb4819-33d4-4f2d-86d2-6970c11962da trycoreos
+
++————————————————————+—————–+——————————+————————————-+
+<span class="p">|</span> id                                                                       <span class="p">|</span> stack_name <span class="p">|</span> stack_status                 <span class="p">|</span>  creation_time                      <span class="p">|</span>
++————————————————————+—————–+——————————+————————————-+
+<span class="p">|</span> 897f08ad-4beb-4000-a871-aaa0231ade90     <span class="p">|</span> trycoreos      <span class="p">|</span> CREATE_IN_PROGRES   <span class="p">|</span> <span class="m">2015</span>-07-30T22:11:35Z        <span class="p">|</span>
++————————————————————+—————–+——————————+————————————-+
+</code></pre></div>
+
+
+<p>The initial ‘CREATE_IN_PROGRESS’ stack_status shows that VM provisioning has started. The stack status can be checked with heat stack-show trycoreos. A ‘CREATE_COMPLETE’ stack_status means that our cluster is up. To get the floating ip address of the control node use the command heat output-show trycoreos control_ip.</p>
+<h3>Check the cluster status</h3>
+<p>Now that we have our node ready, we can ssh to it directly by <code>ssh core@&lt;ip_address&gt;</code>. But let’s try using fleetctl instead to see the status of our cluster and to ssh into the VMs.</p>
+<div class="highlight"><pre><span></span><code>$  <span class="nv">FLEETCTL_TUNNEL</span><span class="o">=</span>”108.182.62.205″ fleetctl list-machines
+
++—————————–+—————————-+————————+
+<span class="p">|</span>  MACHINE                    <span class="p">|</span>        IP                        <span class="p">|</span>       METADATA       <span class="p">|</span>
++—————————–+—————————-+————————+
+<span class="p">|</span>  0315e138…                <span class="p">|</span>  <span class="m">192</span>.168.222.2           <span class="p">|</span>       <span class="nv">role</span><span class="o">=</span>control   <span class="p">|</span>
++—————————–+—————————-+————————+
+</code></pre></div>
+
+
+<p>This lists the nodes in our cluster. Currently we have a single node cluster and that node has the control role. fleetctl talks to the host running the fleet service through ssh and gets information about the cluster, so the host running the fleet service must be accessible remotely via ssh.</p>
+<p>The FLEETCTL_TUNNEL parameter specifies that the fleet service is running on a remote server with ip 108.182.62.205 (our control node). Use the floating ip address from the last section for this parameter. More information about configuring fleetctl can be found using the fleetctl client.</p>
+<p>fleetctl can be used to monitor and to start/stop different services on our cluster. Node the ID above and use that to tell fleet to ssh to the control node:</p>
+<div class="highlight"><pre><span></span><code>$ fleetctl ssh 0315e138
+</code></pre></div>
+
+
+<p>Lets set some keys and get their values. ETCDCTL_PEERS is a comma separated list of all etcd peers. Currently we have single etcd server running on standard 2379, so we specify https://108.182.62.205:2379 below.</p>
+<div class="highlight"><pre><span></span><code>$ <span class="nv">ETCDCTL_PEERS</span><span class="o">=</span>”https://108.182.62.205:2379″ etcdctl ls
+$ etcdctl ls –recursive
+$ etcdctl <span class="nb">set</span> topic coreos
+$ etcdctl get topic
+coreos
+</code></pre></div>
+
+
+<p>We can use –debug option to understand what API is being called. This gives an overview on etcd’s RESTful api.</p>
+<div class="highlight"><pre><span></span><code>$ etcdctl –debug get topic
+Cluster-Endpoints: http://108.182.62.205:2379
+Curl-Example: curl -X GET http://108.182.62.205:2379/v2/keys/topic?quorum<span class="o">=</span>false<span class="p">&amp;</span><span class="nv">recursive</span><span class="o">=</span>false<span class="p">&amp;</span><span class="nv">sorted</span><span class="o">=</span><span class="nb">false</span>
+</code></pre></div>
+
+
+<h4>coreos</h4>
+<p>More information about API can be found at coreos-api.</p>
+<h4>Insight</h4>
+<p>Let’s understand cluster setup and see how CoreOS cluster talks to each other.</p>
+<p>heat template
+The heat template is pretty self-explanatory. It consists of all the required services and uses cloud config to initialise data during the CoreOS bootstrap.</p>
+<p>cloud-init
+As part of heat-template-control.yaml, we are provisioning a single node with cloud config:</p>
+<h3>cloud-config</h3>
+<div class="highlight"><pre><span></span><code><span class="n">coreos</span><span class="o">:</span>
+<span class="n">fleet</span><span class="o">:</span>
+<span class="n">etcd_servers</span><span class="o">:</span> <span class="n">http</span><span class="o">://</span><span class="mf">127.0</span><span class="o">.</span><span class="mf">0.1</span><span class="o">:</span><span class="mi">2379</span>
+<span class="n">metadata</span><span class="o">:</span> <span class="n">role</span><span class="o">=</span><span class="n">control</span>
+<span class="n">etcd2</span><span class="o">:</span>
+<span class="n">name</span><span class="o">:</span> <span class="n">etcd2</span>
+<span class="n">discovery</span><span class="o">:</span> <span class="n">$token_url</span>
+<span class="n">advertise</span><span class="o">-</span><span class="n">client</span><span class="o">-</span><span class="n">urls</span><span class="o">:</span> <span class="n">http</span><span class="o">://</span><span class="n">$public_ipv4</span><span class="o">:</span><span class="mi">2379</span>
+<span class="n">initial</span><span class="o">-</span><span class="n">advertise</span><span class="o">-</span><span class="n">peer</span><span class="o">-</span><span class="n">urls</span><span class="o">:</span> <span class="n">http</span><span class="o">://</span><span class="n">$public_ipv4</span><span class="o">:</span><span class="mi">2380</span>
+<span class="n">listen</span><span class="o">-</span><span class="n">client</span><span class="o">-</span><span class="n">urls</span><span class="o">:</span> <span class="n">http</span><span class="o">://</span><span class="mf">0.0</span><span class="o">.</span><span class="mf">0.0</span><span class="o">:</span><span class="mi">2379</span>
+<span class="n">listen</span><span class="o">-</span><span class="n">peer</span><span class="o">-</span><span class="n">urls</span><span class="o">:</span> <span class="n">http</span><span class="o">://</span><span class="mf">0.0</span><span class="o">.</span><span class="mf">0.0</span><span class="o">:</span><span class="mi">2380</span>
+<span class="n">units</span><span class="o">:</span>
+<span class="err">–</span> <span class="n">name</span><span class="o">:</span> <span class="n">etcd2</span><span class="o">.</span><span class="na">service</span>
+<span class="n">command</span><span class="o">:</span> <span class="n">start</span>
+<span class="err">–</span> <span class="n">name</span><span class="o">:</span> <span class="n">fleet</span><span class="o">.</span><span class="na">service</span>
+<span class="n">command</span><span class="o">:</span> <span class="n">start</span>
+<span class="n">update</span><span class="o">:</span>
+<span class="n">group</span><span class="o">:</span> <span class="n">alpha</span>
+<span class="n">reboot</span><span class="o">-</span><span class="n">strategy</span><span class="o">:</span> <span class="n">reboot</span>
+</code></pre></div>
+
+
+<p>This follows the standard CoreOS cloud-init guide to initialize a system. Fleet and etcd2 services are already present within CoreOS alpha channel. We try to override the default etcd2 and fleet configuration with custom parameters.</p>
+<p>First two lines are for configuring fleet &amp; etcd2. This fleet running on node about etcd servers (a comma separated servers) and their role. These config are placed in etcd2 service at  /run/systemd/system/fleet.service.d/20-cloud-init and they override during etcd startup. Similarly etcd config are placed at /run/systemd/system/etcd2.service.d/20-cloud-init inside control node for overriding.</p>
+<p>In the unit section, we are passing the command to start both these services.</p>
+<p>CoreOs has an update strategy that consists of three channels; alpha, beta and stable. The alpha channel is the most recent release and it closely tracks current development work. It is released very frequently. The beta channel consists of promoted alpha releases that have received more testing and is released less often that alpha. The stable channel should be used for a stable production CoreOS cluster.</p>
+<p>To see what channel is being used, look into /etc/coreos/update.conf.</p>
+<h3>Conclusion</h3>
+<p>This concludes the basic single node setup of a CoreOS cluster. This doesn’t do much but gives us a brief understanding of the underlying concepts of CoreOS. We can verify the status of both the services after sshing into a node and using the following commands: alok@remote $ systemctl status etcd2 &amp;alok@remote $ systemctl status fleet</p>
+<h2>START A MULTI NODE CLUSTER</h2>
+<p>Now that we are confident with CoreOS cloud init, systemd and HEAT templates, lets run a cluster with one control and two worker nodes.</p>
+<p>Delete the old openstack cloud</p>
+<h3>Delete old stack created with single node</h3>
+<div class="highlight"><pre><span></span><code>$ heat stack-delete trycoreos
+</code></pre></div>
+
+
+<p>Run stack-create for new cluster setup.</p>
+<h3>Create another stack for three nodes</h3>
+<div class="highlight"><pre><span></span><code>$ heat stack-create -f heat-template.yaml -P <span class="nv">discovery_token_url</span><span class="o">=</span><span class="sb">`</span>curl -q https://discovery.etcd.io/new?size<span class="o">=</span><span class="m">3</span><span class="sb">`</span> -P <span class="nv">public_network_uuid</span><span class="o">=</span>87cb4819-33d4-4f2d-86d2-6970c11962da trycoreos
++——————————————————–+———————+——————————+——————————-+
+<span class="p">|</span> id                                                                  <span class="p">|</span> stack_name       <span class="p">|</span> stack_status                <span class="p">|</span> creation_time                <span class="p">|</span>
++——————————————————–+———————+——————————+——————————-+
+<span class="p">|</span> 897f08ad-4beb-4000-a871-aaa0231ade90 <span class="p">|</span> trycoreos          <span class="p">|</span> CREATE_IN_PROGRESS <span class="p">|</span> <span class="m">2015</span>-07-30T22:11:35Z <span class="p">|</span>
++——————————————————–+———————+——————————+——————————-+
+</code></pre></div>
+
+
+<p>This provisions three node cluster and assuming that control node has ip address 108.182.62.205, lets list machines in cluster</p>
+<div class="highlight"><pre><span></span><code>$ <span class="nv">FLEETCTL_TUNNEL</span><span class="o">=</span>”108.182.62.205″ fleetctl list-machines
+The authenticity of host ‘108.182.62.205’ can’t be established.
+RSA key fingerprint is <span class="m">48</span>:17:d4:4f:fe:33:0d:b5:44:b3:5b:11:fa:b0:e6:03.
+Are you sure you want to <span class="k">continue</span> connecting <span class="o">(</span>yes/no<span class="o">)</span>? yes
+Warning: Permanently added ‘108.182.62.205’ <span class="o">(</span>RSA<span class="o">)</span> to the list of known hosts.
+MACHINE         IP              METADATA
+93c797b0…     <span class="m">192</span>.168.222.2   <span class="nv">role</span><span class="o">=</span>node
+e7d9f87f…     <span class="m">192</span>.168.222.4   <span class="nv">role</span><span class="o">=</span>control
+ee9c8044…     <span class="m">192</span>.168.222.5   <span class="nv">role</span><span class="o">=</span>node
+</code></pre></div>
+
+
+<p>Let’s ssh to one of the nodes</p>
+<div class="highlight"><pre><span></span><code>$ fleetctl ssh ee9c8044
+The authenticity of host ‘192.168.222.5’ can’t be established.
+RSA key fingerprint is <span class="m">95</span>:59:c9:ed:ee:ae:4c:5d:b1:db:95:5a:5e:7a:f2:20.
+Are you sure you want to <span class="k">continue</span> connecting <span class="o">(</span>yes/no<span class="o">)</span>? yes
+Warning: Permanently added ‘192.168.222.5’ <span class="o">(</span>RSA<span class="o">)</span> to the list of known hosts.
+CoreOS alpha <span class="o">(</span><span class="m">752</span>.1.0<span class="o">)</span>
+Failed Units: <span class="m">0</span>
+$
+</code></pre></div>
+
+
+<h3>Sharing/accessing keys across cluster</h3>
+<p>Lets use etcd to list keys, set key and see them from different machines.</p>
+<div class="highlight"><pre><span></span><code>$ etcdctl ls –recursive
+</code></pre></div>
+
+
+<p>We see there is no keys set as of now.</p>
+<div class="highlight"><pre><span></span><code>$ etcdctl <span class="nb">set</span> coreos/network/config “192.168.3.0/24”
+$ etcdctl ls –recursive
+/coreos
+/coreos/network
+/coreos/network/config
+</code></pre></div>
+
+
+<p>Let’s verify that these are same inside the control node. To do so we SSH into the worker control node and do a recursive list of keys.</p>
+<div class="highlight"><pre><span></span><code>$ fleetctl ssh e7d9f87f
+$ etcdctl ls –recursive
+/coreos
+/coreos/network
+/coreos/network/config
+$ etcdclt get /coreos/network/config
+<span class="m">192</span>.168.3.0/24
+</code></pre></div>
+
+
+<h3>Conclusion</h3>
+<p>This brings to an end our very basic CoreOS cluster setup and how to talk to each node in the cluster. We can now use this CoreOS cluster to host applications inside docker containers and to manage them.</p>
+<blockquote>
+<p><strong>Credit</strong>: This is inspired by coreos-heat templates from <a href="https://github.com/sinner-/heat-coreos">heat-coreos</a></p>
+</blockquote>
+	<hr class="post-end" />
+	<div id="disqus_thread"></div>
+		<script type="text/javascript">
+			var disqus_shortname = 'rajalokan';
+			(function() {
+	 			var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	 			dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+	 			(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	 		})();
+		</script>
+	<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+</div>
+		</div>
+	</body>
+</html>

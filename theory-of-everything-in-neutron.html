@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" prefix="og: http://ogp.me/ns#">
+	<head>
+		<link href="http://gmpg.org/xfn/11" rel="profile">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta http-equiv="content-type" content="text/html; charset=utf-8">
+		<link rel="shortcut icon" href="/images/favicon.ico">
+		<!-- Metadata -->
+	<meta name="description" content="">
+	<meta property="og:description" content="">
+	<meta property="og:title" content="Theory Of Everythin... well, In Neutron!" />
+	<meta property="og:type" content="article" />
+	<meta property="og:url" content="http://rajalokan.github.io/theory-of-everything-in-neutron.html" />
+		<meta property="og:image" content="http://rajalokan.github.io/images/rajalokan.jpg" />
+
+		<!-- Enable responsiveness on mobile devices-->
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+		<title>
+Theory Of Everythin... well, In Neutron!
+ - Alok Kumar		</title>
+
+		<!-- CSS -->
+		<link href="//fonts.googleapis.com/" rel="dns-prefetch">
+		<link href="//fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic|Abril+Fatface|PT+Sans:400,400italic,700&amp;subset=latin,latin-ext" rel="stylesheet">
+
+		<link rel="stylesheet" href="http://rajalokan.github.io/theme/css/poole.css" />
+		<link rel="stylesheet" href="http://rajalokan.github.io/theme/css/hyde.css" />
+		<link rel="stylesheet" href="http://rajalokan.github.io/theme/css/syntax.css" />
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+		<!-- RSS -->
+		<link rel="alternate" type="application/rss+xml" title="RSS" href="/atom.xml">
+	</head>
+
+	<body class="theme-base-0d">
+<div class="sidebar">
+	<div class="container sidebar-sticky">
+		<div class="sidebar-about">
+
+			<h1>
+				<a href="/">
+					<img class="profile-picture" src="http://rajalokan.github.io/images/rajalokan.jpg">
+					@rajalokan
+				</a>
+			</h1>
+			<p class="lead">Alok Kumar</p>
+			<p class="bio"> </p>
+			<p></p>
+		</div>
+		<nav class="sidebar-nav">
+					<a class="sidebar-nav-item" href="mailto:rajalokan@gmail.com">
+						<i class="fa fa-envelope"></i>
+					</a>
+					<a class="sidebar-nav-item" target="_blank" href="https://twitter.com/rajalokan">
+						<i class="fa fa-twitter"></i>
+					</a>
+					<a class="sidebar-nav-item" target="_blank" href="https://github.com/rajalokan">
+						<i class="fa fa-github"></i>
+					</a>
+					<a class="sidebar-nav-item" target="_blank" href="https://www.linkedin.com/in/alok-kumar-947b838/">
+						<i class="fa fa-linkedin"></i>
+					</a>
+			<a class="sidebar-nav-item" href="">
+				<i class="fa fa-feed"></i>
+			</a>
+		</nav>
+	</div>
+</div>		<div class="content container">
+<div class="post">
+	<h1 class="post-title">Theory Of Everythin... well, In Neutron!</h1>
+	<span class="post-date">Tue 06 September 2016</span>
+	<div class="alert alert-primary" role="alert" style="color: #004085; background-color: #eff7ff; border-color: #b8daff; position: relative; padding: 0.75rem 1.25rem; margin-bottom: 1.5rem;">
+Reblogged from my blog written for <a href="https://aptira.com/" style="color: #004085; text-decoration: underline;">@aptira</a> at <a href="https://aptira.com/theory-of-everything-in-neutron/" style="color: #004085; text-decoration: underline;">theory of everything in neutron</a>
+</div>
+
+<p>In a previous blog post about getting started with neutron, we glanced through workings of OpenStack neutron. This post will allow readers to understand the details of Neutron.</p>
+<p>As part of this we will cover:</p>
+<ul>
+<li>Features.</li>
+<li>How is it different to older and now deprecated nova-network.</li>
+<li>Architecture of and internals.</li>
+<li>L2 Agents.</li>
+<li>L3 Agents.</li>
+</ul>
+<p>Readers wishing to learn more should take a look at our <a href="https://aptira.com/openstack-training/">OpenStack training</a> courses. Both free and paid courses are available, suiting all levels of experience from beginner through to advanced. For more information please contact us.</p>
+<h2>Features</h2>
+<p>As the official wiki states:</p>
+<p>Neutron is an OpenStack project to provide “networking as a service” between interface devices (e.g., vNICs) managed by other Openstack services (e.g., nova).</p>
+<p>Essentially neutron exposes a set of APIs and provides pluggable interface to a lot of third party and community developed plugins which can be used to bring up a highly robust networking infrastructure with extended capability.</p>
+<p>In simple terms some core features are:</p>
+<ul>
+<li><strong>Has a Unified API &amp; Core.</strong> Networking can be complex because of multiple device support. Keeping API’s small make it much easier to accommodate and maintain many types of devices. </li>
+<li><strong>Overlapping IP stack.</strong> As we will find, neutron can provide isolated tenant networks within a project. This is because of overlapping IP stack.</li>
+<li><strong>Floating IPs.</strong> Gives you an ability to map an address from public range and have them attached to a VIF (Virtual Interface) of a VM.</li>
+<li><strong>Pluggable Open Arch.</strong> Many ways to achieve L2 connectivity. This type of pluggable Open Architecture allows to create such architecture.</li>
+<li><strong>Extensible.</strong> Routing extensions, security group extensions and LB extensions give much needed features set to neutron, but still keep the core small and maintainable.</li>
+<li><strong>Security Groups.</strong> Different tenants. Neutron supports egress traffic. Logical implementation.</li>
+</ul>
+<h2>Neutron vs Nova Networks</h2>
+<p>Though we will cover Neutron as part of this post, it is better to understand its predecessor. Before neutron, OpenStack networking was done by Nova network. Here is a brief comparison between the two.</p>
+<p><img alt="neutron_vs_nova.png" src="images/04/neutron_vs_nova.png"></p>
+<h2>Architecture &amp; Internals</h2>
+<p>Neutron is plugin extensible by design. Most of the extended features are provided by agents which can be stacked linearly for scaling. This make it very easy to maintain core features, and at the same time easily add additional features.</p>
+<p>The below diagram showcases the internals of neutrol. Neutron consists of three components, a server (API layer) and a database layer. This database is connected to a neutron-server. The neutron server can pass requests to a message queue which takes requests from neutron-server and passes on to corresponding agents.</p>
+<p><img alt="neutron_architecture.png" src="images/04/neutron_architecture.png"></p>
+<p>If you are using the builtin reference implementation, you will have an L2 Agent running. For the case of providing multi tenancy and other layer 3 features, we can add L3 agents. This will be responsible for virtual routing and floating IPs.</p>
+<p>You may also need a DHCP agent which takes care of the IP stack on booting VMs. You can even break different subnets for different DHCP agents.</p>
+<p>Neutron can be further extended to provide advanced L4 to L7 features such as a Load Balancer as a service or Firewall as a service using the extra corresponding agent.</p>
+<h3>Neutron Server</h3>
+<p>If we look inside the Neutron-Server, which works as the API layer, it can be further subdivided into three major components. The first two parts of the API core are pretty obvious. One service to provide API interfaces and the other service talks to message queue.</p>
+<p><img alt="neutron_api_layer_internals.png" src="images/04/neutron_api_layer_internals.png"></p>
+<p>It is the third party plugins component which is very important. This is the core of neutron.</p>
+<h4>ML2 PLUGIN</h4>
+<p>This plugin could be a monolithic core plugin, or it could be an ML2 plugin. The ML2 plugin is the default option which utilises a large number of existing L2 networking solutions. This also provides support for OVS, linux bridge and Hyper V. With this we can actually run linux bridge and OVS at the same time.</p>
+<p>This ML2 framework is also intended to greatly simplify adding support for any new L2 networking technologies, requiring much less initial and ongoing effort to add a new monolithic core plugin.</p>
+<h4>TYPE DRIVER</h4>
+<p>Based on network type such as local, flat, VLAN, GRE or VXLAN, TypeDrivers provide drivers for that particular network type. TypeDrivers provide network state for this specific type and other network validation and tenant allocation.</p>
+<h4>MECHANISM DRIVER</h4>
+<p>Each networking mechanism is managed by an ML2 MechanismDriver. The MechanismDriver is responsible for taking the information established by the TypeDriver and ensuring that it is properly applied given the specific networking mechanisms that have been enabled. For example Quota, Qos, Extra Routes, metering etc.</p>
+<h2>L2 Agents</h2>
+<p>L2 agents run on the hypervisor (compute node). Its main responsibility is to configure software bridges on those compute nodes. L2 agents sit on watcher to watch notifications that a new device has been added or removed. Apart from this, it also handles security group rules.</p>
+<p>This actually supports VLAN, GRE and VXLAN for network isolation. For the implementation with OVS, it uses ovsdb to talk to OVS for networking setup.</p>
+<p>We can better understand L2 agent using the diagram below. Whenever a new instance is spawn, nova compute adds a tap interface (a vif driver interface) and then requests neutron for a new network allocation.</p>
+<p><img alt="l2_agent.png" src="images/04/l2_agent.png"></p>
+<p>Meanwhile the L2 agent is separately watching for any new VIF interfaces, and records the newly spawned interface. Next, it fetches details about the device attached to this interface from the neutron-server.</p>
+<p>The server then allocates a network for this resource which means creating tap interface on the VM using linux bridge and putting in security group rules (using iptables).</p>
+<p>Once the L2 agent is able to establish connection, it updates neutron-server that device is up.</p>
+<h2>L3 Agents</h2>
+<p>While L2 agents let your virtual machine get attached to your network, an L3 agent gets the routers attached to each other, providing network ready resources.</p>
+<p>All level 3 forwarding and NAT across tenant networks is done through Linux Network namespaces and iptables. This provides multiple routers with overlapping IP address. Within a cloud environment where virtual machines need to be frequently created or destroyed, neutron’s overlapping IPs are very useful feature.</p>
+<p>Apart from this, neutron’s floating IP feature allows internal Virtual Machines to connect to or from outside the public network. These floating IPs aren’t hooked to an instance, rather it is connected to the neutron port.</p>
+<p>We can use python client command line APIs to show any port associated with a neutron instance.</p>
+<p><img alt="l3_agent.png" src="images/04/l3_agent.png"></p>
+<p>Internally, Neutron receives update requests for routers from the server. Upon getting an update request, the L3 agent puts this on a processing queue of its own.</p>
+<p>Based on your requirements, we can configure neutron with a provided feature set and extend it at a later stage.</p>
+<p>If you’d like to know more, don’t forget to checkout our <a href="https://aptira.com/openstack-training/">OpenStack Training</a> courses or <a href="https://aptira.com/contact/">contact us</a> with any questions.</p>
+	<hr class="post-end" />
+	<div id="disqus_thread"></div>
+		<script type="text/javascript">
+			var disqus_shortname = 'rajalokan';
+			(function() {
+	 			var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	 			dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+	 			(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	 		})();
+		</script>
+	<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+</div>
+		</div>
+	</body>
+</html>

@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en" prefix="og: http://ogp.me/ns#">
+	<head>
+		<link href="http://gmpg.org/xfn/11" rel="profile">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta http-equiv="content-type" content="text/html; charset=utf-8">
+		<link rel="shortcut icon" href="/images/favicon.ico">
+		<!-- Metadata -->
+	<meta name="description" content="">
+	<meta property="og:description" content="">
+	<meta property="og:title" content="Everything you need to know to get started with Neutron" />
+	<meta property="og:type" content="article" />
+	<meta property="og:url" content="http://rajalokan.github.io/everything-you-need-to-know-to-get-started-with-neutron.html" />
+		<meta property="og:image" content="http://rajalokan.github.io/images/rajalokan.jpg" />
+
+		<!-- Enable responsiveness on mobile devices-->
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+		<title>
+Everything you need to know to get started with Neutron
+ - Alok Kumar		</title>
+
+		<!-- CSS -->
+		<link href="//fonts.googleapis.com/" rel="dns-prefetch">
+		<link href="//fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic|Abril+Fatface|PT+Sans:400,400italic,700&amp;subset=latin,latin-ext" rel="stylesheet">
+
+		<link rel="stylesheet" href="http://rajalokan.github.io/theme/css/poole.css" />
+		<link rel="stylesheet" href="http://rajalokan.github.io/theme/css/hyde.css" />
+		<link rel="stylesheet" href="http://rajalokan.github.io/theme/css/syntax.css" />
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+		<!-- RSS -->
+		<link rel="alternate" type="application/rss+xml" title="RSS" href="/atom.xml">
+	</head>
+
+	<body class="theme-base-0d">
+<div class="sidebar">
+	<div class="container sidebar-sticky">
+		<div class="sidebar-about">
+
+			<h1>
+				<a href="/">
+					<img class="profile-picture" src="http://rajalokan.github.io/images/rajalokan.jpg">
+					@rajalokan
+				</a>
+			</h1>
+			<p class="lead">Alok Kumar</p>
+			<p class="bio"> </p>
+			<p></p>
+		</div>
+		<nav class="sidebar-nav">
+					<a class="sidebar-nav-item" href="mailto:rajalokan@gmail.com">
+						<i class="fa fa-envelope"></i>
+					</a>
+					<a class="sidebar-nav-item" target="_blank" href="https://twitter.com/rajalokan">
+						<i class="fa fa-twitter"></i>
+					</a>
+					<a class="sidebar-nav-item" target="_blank" href="https://github.com/rajalokan">
+						<i class="fa fa-github"></i>
+					</a>
+					<a class="sidebar-nav-item" target="_blank" href="https://www.linkedin.com/in/alok-kumar-947b838/">
+						<i class="fa fa-linkedin"></i>
+					</a>
+			<a class="sidebar-nav-item" href="">
+				<i class="fa fa-feed"></i>
+			</a>
+		</nav>
+	</div>
+</div>		<div class="content container">
+<div class="post">
+	<h1 class="post-title">Everything you need to know to get started with Neutron</h1>
+	<span class="post-date">Wed 16 March 2016</span>
+	<div class="alert alert-primary" role="alert" style="color: #004085; background-color: #eff7ff; border-color: #b8daff; position: relative; padding: 0.75rem 1.25rem; margin-bottom: 1.5rem;">
+Reblogged from my blog written for <a href="https://aptira.com/" style="color: #004085; text-decoration: underline;">@aptira</a> at <a href="https://aptira.com/everything-need-know-get-started-neutron/" style="color: #004085; text-decoration: underline;">everything you need to konw to get started with neutron</a>.
+</div>
+
+<p>Understanding Neutron can be challenging if you are new to a Networking background or OpenStack. In this series of posts, we will try to cover OpenStack networking component in details. Readers wishing to learn more should take a look at our <a href="https://aptira.com/openstack-training/">OpenStack training</a> courses. Both free and paid courses are available, suiting all levels of experience from beginner through to advanced. For more information, please <a href="https://aptira.com/contact/">contact us</a>.</p>
+<p>As per the <a href="http://docs.openstack.org/developer/neutron/">official OpenStack documentation</a>, Neutron is an OpenStack project to provide “network connectivity as a service” between interface devices (e.g., vNICs) managed by other OpenStack services (e.g., nova).  In very simple terms neutron</p>
+<ul>
+<li>allows users to create and manage network objects, such as networks, subnets and ports, which other OpenStack services can use through an API.</li>
+<li>It enables a large number of operators to implement complex set of networking technologies to power their network infrastructure, through the use of agents, plugins and drivers.</li>
+<li>And that is all it is. I assure this will be the last bit of heavy wordings.</li>
+</ul>
+<p>Let’s try to understand networking in OpenStack with an example scenario. As part of this four section article, we will create multiple networks and subnets. Then we will spawn multiple VMs across these networks and verify network connectivity for static IPs. We will then look into restricting access to VMs using security groups and finally an insight to connectivity across different networks using routers and floating IPs. Ready to go?</p>
+<h2>Networks, Subnets &amp; Ports</h2>
+<p>As promised, let’s first create some networks. For this section our plan is to</p>
+<ul>
+<li>create a network (GREEN). Create a subnet for this network and then spawn two VMs using this network.</li>
+<li>create another network (RED) with a different subnet and spawn another two VMs using this network</li>
+<li>verify ports created as part of above process and understand why OpenStack networking ports are useful.</li>
+</ul>
+<p><img alt="image01" src="images/neutron01_01.png"></p>
+<p>On completion of this set of tasks, we will have a network infrastructure as shown above, containing</p>
+<ul>
+<li>two virtual networks(GREEN &amp; RED)</li>
+<li>two subnets, one per virtual network 10.10.10.0/24 and 20.10.10.0/24</li>
+<li>four VMs (two per virtual network) with IPs dynamically assigned by DHCP on corresponding network.</li>
+<li>two DHCP hosts(automatically created if ticked while network creation)</li>
+<li>and six networking ports in use overall.</li>
+</ul>
+<p>Let’s verify first that there are no existing networks. For all the below commands, we will use python CLI bindings for OpenStack (<a href="http://docs.openstack.org/developer/python-neutronclient/">python-neutronclient</a> or <a href="http://docs.openstack.org/developer/python-novaclient/">python-novaclient</a>).</p>
+<div class="highlight"><pre><span></span><code>$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; neutron net-list
+$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; <span class="c1">#...................................................................</span>
+</code></pre></div>
+
+
+<p>Now we create our first network named GREEN.</p>
+<div class="highlight"><pre><span></span><code>$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; neutron net-create GREEN
+Created a new network:
++---------------------------+----------------------------------------------------------+
+<span class="p">|</span> Field                     <span class="p">|</span> Value                                                    <span class="p">|</span>
++---------------------------+----------------------------------------------------------+
+<span class="p">|</span> admin_state_up            <span class="p">|</span> True                                                     <span class="p">|</span>
+<span class="p">|</span> id                        <span class="p">|</span> 6df1fa59-25a3-4f8c-8d14-ae7f7828c1a2                     <span class="p">|</span>
+<span class="p">|</span> name                      <span class="p">|</span> GREEN                                                    <span class="p">|</span>
+<span class="p">|</span> provider:network_type     <span class="p">|</span> gre                                                      <span class="p">|</span>
+<span class="p">|</span> provider:physical_network <span class="p">|</span>                                                          <span class="p">|</span>
+<span class="p">|</span> provider:segmentation_id  <span class="p">|</span> <span class="m">101</span>                                                      <span class="p">|</span>
+<span class="p">|</span> router:external           <span class="p">|</span> False                                                    <span class="p">|</span>
+<span class="p">|</span> shared                    <span class="p">|</span> False                                                    <span class="p">|</span>
+<span class="p">|</span> status                    <span class="p">|</span> ACTIVE                                                   <span class="p">|</span>
+<span class="p">|</span> subnets                   <span class="p">|</span>                                                          <span class="p">|</span>
+<span class="p">|</span> tenant_id                 <span class="p">|</span> 34609d0ea9ce48f98145ecc5bbac9f77                         <span class="p">|</span>
++---------------------------------------------+----------------------------------------+
+$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; <span class="c1">#...................................................................</span>
+</code></pre></div>
+
+
+<p>As we can see, a new network with name GREEN is created. This network is of type GRE with a segmentation id of 101 (this will be covered more in the next blog in this series). Also you can note that this is not an external network (looking at router:external is False).</p>
+<p>Now let’s create a subnet within this network. We chose 10.10.10.0./24 range for this subnet and a self explanatory name of 10_10_10.</p>
+<div class="highlight"><pre><span></span><code>$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; neutron subnet-create --name 10_10_10 GREEN <span class="m">10</span>.10.10.0/24
+Created a new subnet:
++-------------------------+----------------------------------------------------------+
+<span class="p">|</span> Field                   <span class="p">|</span> Value                                                    <span class="p">|</span>
++-------------------------+----------------------------------------------------------+
+<span class="p">|</span> allocation_pools        <span class="p">|</span> <span class="o">{</span><span class="s2">&quot;start&quot;</span>: <span class="s2">&quot;10.10.10.2&quot;</span>, <span class="s2">&quot;end&quot;</span>: <span class="s2">&quot;10.10.10.254&quot;</span><span class="o">}</span>           <span class="p">|</span>
+<span class="p">|</span> cidr                    <span class="p">|</span> <span class="m">10</span>.10.10.0/24                                            <span class="p">|</span>
+<span class="p">|</span> dns_nameservers         <span class="p">|</span>                                                          <span class="p">|</span>
+<span class="p">|</span> enable_dhcp             <span class="p">|</span> True                                                     <span class="p">|</span>
+<span class="p">|</span> gateway_ip              <span class="p">|</span> <span class="m">10</span>.10.10.1                                               <span class="p">|</span>
+<span class="p">|</span> host_routes             <span class="p">|</span>                                                          <span class="p">|</span>
+<span class="p">|</span> id                      <span class="p">|</span> 1667e8b9-e2fe-41a6-bfd2-7de41f777d6e                     <span class="p">|</span>
+<span class="p">|</span> ip_version              <span class="p">|</span> <span class="m">4</span>                                                        <span class="p">|</span>
+<span class="p">|</span> ipv6_address_mode       <span class="p">|</span>                                                          <span class="p">|</span>
+<span class="p">|</span> ipv6_ra_mode            <span class="p">|</span>                                                          <span class="p">|</span>
+<span class="p">|</span> name                    <span class="p">|</span> 10_10_10                                                 <span class="p">|</span>
+<span class="p">|</span> network_id              <span class="p">|</span> 6df1fa59-25a3-4f8c-8d14-ae7f7828c1a2                     <span class="p">|</span>
+<span class="p">|</span> tenant_id               <span class="p">|</span> 34609d0ea9ce48f98145ecc5bbac9f77                         <span class="p">|</span>
++-------------------------+----------------------------------------------------------+
+$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; <span class="c1">#...................................................................</span>
+</code></pre></div>
+
+
+<p>We can see that a subnet is created with a default allocation pool of 10.10.10.2-10.10.10.254. Any new devices in this subnet will be assigned ip addresses from this range. The first and last IPs are special and they are reserved. Here 10.10.10.1 is the default gateway as shown in the output of</p>
+<div class="highlight"><pre><span></span><code>$ neutron subnet-create
+</code></pre></div>
+
+
+<p>command. The last IP of this range 10.10.10.255 is the broadcast address, which is reserved for broadcast usage.</p>
+<p>Fetching the network list again, we can verify that our GREEN network has a new subnet 10.10.10.0/24.</p>
+<div class="highlight"><pre><span></span><code>$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; neutron net-list
++-------------+-------+----------------------------------------------------+
+<span class="p">|</span> id          <span class="p">|</span> name  <span class="p">|</span> subnets                                            <span class="p">|</span>
++-------------+-------+----------------------------------------------------+
+<span class="p">|</span> 6df --- 1a2 <span class="p">|</span> GREEN <span class="p">|</span> 1667e8b9-e2fe-41a6-bfd2-7de41f777d6e <span class="m">10</span>.10.10.0/24 <span class="p">|</span>
++-------------+-------+----------------------------------------------------+
+$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; <span class="c1">#...................................................................</span>
+</code></pre></div>
+
+
+<p>Now that our basic network components are ready, let’s boot a couple of tiny VMs with this network,using the cirros image.</p>
+<div class="highlight"><pre><span></span><code>$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; nova boot --flavor m1.tiny --image cirros --min-count <span class="m">2</span> --nic net-id<span class="o">=</span>6df1fa59-25a3-4f8c-8d14-ae7f7828c1a2 greenboxes
++--------------------------------------+-------------------------------------------------+
+<span class="p">|</span> Property                             <span class="p">|</span> Value                                           <span class="p">|</span>
++--------------------------------------+-------------------------------------------------+
+<span class="p">|</span> OS-DCF:diskConfig                    <span class="p">|</span> MANUAL                                          <span class="p">|</span>
+<span class="p">|</span> OS-EXT-AZ:availability_zone          <span class="p">|</span> nova                                            <span class="p">|</span>
+<span class="p">|</span> OS-EXT-SRV-ATTR:host                 <span class="p">|</span> -                                               <span class="p">|</span>
+<span class="p">|</span> OS-EXT-SRV-ATTR:hypervisor_hostname  <span class="p">|</span> -                                               <span class="p">|</span>
+<span class="p">|</span> OS-EXT-SRV-ATTR:instance_name        <span class="p">|</span> instance-00000016                               <span class="p">|</span>
+<span class="p">|</span> OS-EXT-STS:power_state               <span class="p">|</span> <span class="m">0</span>                                               <span class="p">|</span>
+<span class="p">|</span> OS-EXT-STS:task_state                <span class="p">|</span> scheduling                                      <span class="p">|</span>
+<span class="p">|</span> OS-EXT-STS:vm_state                  <span class="p">|</span> building                                        <span class="p">|</span>
+<span class="p">|</span> OS-SRV-USG:launched_at               <span class="p">|</span> -                                               <span class="p">|</span>
+<span class="p">|</span> OS-SRV-USG:terminated_at             <span class="p">|</span> -                                               <span class="p">|</span>
+<span class="p">|</span> accessIPv4                           <span class="p">|</span>                                                 <span class="p">|</span>
+<span class="p">|</span> accessIPv6                           <span class="p">|</span>                                                 <span class="p">|</span>
+<span class="p">|</span> adminPass                            <span class="p">|</span> BurRPPiCm6TK                                    <span class="p">|</span>
+<span class="p">|</span> config_drive                         <span class="p">|</span>                                                 <span class="p">|</span>
+<span class="p">|</span> created                              <span class="p">|</span> <span class="m">2016</span>-03-09T02:04:56Z                            <span class="p">|</span>
+<span class="p">|</span> flavor                               <span class="p">|</span> m1.tiny <span class="o">(</span><span class="m">1</span><span class="o">)</span>                                     <span class="p">|</span>
+<span class="p">|</span> hostId                               <span class="p">|</span>                                                 <span class="p">|</span>
+<span class="p">|</span> id                                   <span class="p">|</span> b2647e00-81e3-4290-b9c3-ce5e584c7265            <span class="p">|</span>
+<span class="p">|</span> image                                <span class="p">|</span> cirros <span class="o">(</span>5c912cd4-729e-4f29-8761-eb04e630741d<span class="o">)</span>   <span class="p">|</span>
+<span class="p">|</span> key_name                             <span class="p">|</span> default                                         <span class="p">|</span>
+<span class="p">|</span> metadata                             <span class="p">|</span> <span class="o">{}</span>                                              <span class="p">|</span>
+<span class="p">|</span> name                                 <span class="p">|</span> greenboxes-b2647e00-81e3-4290-b9c3-ce5e584c7265 <span class="p">|</span>
+<span class="p">|</span> os-extended-volumes:volumes_attached <span class="p">|</span> <span class="o">[]</span>                                              <span class="p">|</span>
+<span class="p">|</span> progress                             <span class="p">|</span> <span class="m">0</span>                                               <span class="p">|</span>
+<span class="p">|</span> security_groups                      <span class="p">|</span> default                                         <span class="p">|</span>
+<span class="p">|</span> status                               <span class="p">|</span> BUILD                                           <span class="p">|</span>
+<span class="p">|</span> tenant_id                            <span class="p">|</span> 34609d0ea9ce48f98145ecc5bbac9f77                <span class="p">|</span>
+<span class="p">|</span> updated                              <span class="p">|</span> <span class="m">2016</span>-03-09T02:04:56Z                            <span class="p">|</span>
+<span class="p">|</span> user_id                              <span class="p">|</span> e9b23b6cb7ef4e7c99d8934e34163726                <span class="p">|</span>
++--------------------------------------+-------------------------------------------------+
+$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; <span class="c1">#...................................................................</span>
+</code></pre></div>
+
+
+<p>This results in a message stating that two m1.tiny VMs with images cirros are building.</p>
+<div class="highlight"><pre><span></span><code>$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; nova list --fields Name,Networks
++--------------------------------------+----------------------------------+------------------+
+<span class="p">|</span> ID                                   <span class="p">|</span> Name                             <span class="p">|</span> Networks         <span class="p">|</span>
++--------------------------------------+----------------------------------+------------------+
+<span class="p">|</span> b2647e00-81e3-4290-b9c3-ce5e584c7265 <span class="p">|</span> greenboxes-b2647e00-ce5e584c7265 <span class="p">|</span> <span class="nv">GREEN</span><span class="o">=</span><span class="m">10</span>.10.10.5 <span class="p">|</span>
+<span class="p">|</span> f0d6e68c-5e18-432c-b0a7-4ef6da054053 <span class="p">|</span> greenboxes-f0d6e68c-4ef6da054053 <span class="p">|</span> <span class="nv">GREEN</span><span class="o">=</span><span class="m">10</span>.10.10.6 <span class="p">|</span>
++--------------------------------------+----------------------------------+------------------+
+$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; <span class="c1">#...................................................................</span>
+</code></pre></div>
+
+
+<p>A quick and short <code>nova list</code> above shows that the VMs have booted with two IPs in the 10_10_10 subnet. As part of the boot process, a port on the network virtual switch is attached to the virtual interface of the VM. Taking a look at the ports for this network should give us an understanding of the devices that have been added to this network.</p>
+<div class="highlight"><pre><span></span><code>$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; neutron port-list -c id -c fixed_ips
++-----+-----------------------------------------------------------------------------------+
+<span class="p">|</span> id  <span class="p">|</span> fixed_ips                                                                         <span class="p">|</span>
++--------------------------------------+--------------------------------------------------+
+<span class="p">|</span> XXX <span class="p">|</span> <span class="o">{</span><span class="s2">&quot;subnet_id&quot;</span>: <span class="s2">&quot;1667e8b9-e2fe-41a6-bfd2-7de41f777d6e&quot;</span>,  <span class="s2">&quot;ip_address&quot;</span>: <span class="s2">&quot;10.10.10.6&quot;</span><span class="o">}</span> <span class="p">|</span>
+<span class="p">|</span> XXX <span class="p">|</span> <span class="o">{</span><span class="s2">&quot;subnet_id&quot;</span>: <span class="s2">&quot;1667e8b9-e2fe-41a6-bfd2-7de41f777d6e&quot;</span>,  <span class="s2">&quot;ip_address&quot;</span>: <span class="s2">&quot;10.10.10.5&quot;</span><span class="o">}</span> <span class="p">|</span>
+<span class="p">|</span> XXX <span class="p">|</span> <span class="o">{</span><span class="s2">&quot;subnet_id&quot;</span>: <span class="s2">&quot;1667e8b9-e2fe-41a6-bfd2-7de41f777d6e&quot;</span>,  <span class="s2">&quot;ip_address&quot;</span>: <span class="s2">&quot;10.10.10.4&quot;</span><span class="o">}</span> <span class="p">|</span>
++-----+-----------------------------------------------------------------------------------+
+$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; <span class="c1">#...................................................................</span>
+</code></pre></div>
+
+
+<p>Hitting <code>neutron port-list</code> above shows that there are three ports created. Two attached to VM interfaces and one attached to a virtual DHCP server. This DHCP server is created because we didn’t disable DHCP while creating the network. This DHCP service is responsible for allocating dynamic IP addresses to virtual machines.</p>
+<p>Another, easier way to verify port creation is from the horizon dashboard. On clicking on a a particular network, we are taken to the network details page where we can see the ports being used for the selected network. For example, upon opening the network details page of network GREEN, we see</p>
+<p>We can see two Compute:None ports which tell us that those ports are connected to VMs. And one (10.10.10.4) port which is connected to the DHCP service.</p>
+<blockquote>
+<p>A Network in OpenStack is kind of a VLAN but with more flexibility.</p>
+<p>A Subnet is a block of IP addresses and associated configuration state. Subnets are used to allocate IP addresses when new ports are created on a network. &amp;</p>
+<p>A Neutron Port is a connection point for attaching a single device, such as the NIC of a virtual server, to a virtual network. The port also describes the associated network configuration, such as the MAC and IP addresses to be used on that port.</p>
+</blockquote>
+<p>Now that our first set of VMs and network components have been created, similarly we will create another new network (named RED), create another new subnet for this network and boot two new VMs using these networks and subnets. Assuming we have repeated the above steps, we can verify four instances in the  horizon dashboard, as below. These four instances are running in a set of two nodes, two connected to the GREEN network(10.10.10.X) and the other two connected to the RED (20.10.10.X) network.</p>
+<p><img alt="image03" src="image03"></p>
+<p>Four instances running, two in GREEN network(10.10.10.X) &amp; other two in RED (20.10.10.X) network.</p>
+<p>There exist two networks</p>
+<div class="highlight"><pre><span></span><code>$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; neutron net-list
++--------------------------------------+-------+-----------------------------------------+
+<span class="p">|</span> id                                   <span class="p">|</span> name  <span class="p">|</span> subnets                                 <span class="p">|</span>
++--------------------------------------+-------+-----------------------------------------+
+<span class="p">|</span> 6df1fa59-25a3-4f8c-8d14-ae7f7828c1a2 <span class="p">|</span> GREEN <span class="p">|</span> 1667e8b9--7de41f777d6e <span class="m">10</span>.10.10.0/24    <span class="p">|</span>
+<span class="p">|</span> 1048605e-41f6-4c10-be89-935f836a1b40 <span class="p">|</span> RED   <span class="p">|</span> db05f7e4--d9e164f86ca8 <span class="m">20</span>.10.10.0/24    <span class="p">|</span>
++--------------------------------------+-------+-----------------------------------------+
+$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; <span class="c1">#................................................................</span>
+</code></pre></div>
+
+
+<p>A total of six ports are created. Four ports for the four VMs and two ports to connect to two DHCP services per network.</p>
+<div class="highlight"><pre><span></span><code>$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; neutron port-list -c id -c fixed_ips
++-----+----------------------------------------------------------------------------------+
+<span class="p">|</span> id  <span class="p">|</span> fixed_ips                                                                        <span class="p">|</span>
++-----+----------------------------------------------------------------------------------+
+<span class="p">|</span> XXX <span class="p">|</span> <span class="o">{</span><span class="s2">&quot;subnet_id&quot;</span>: <span class="s2">&quot;1667e8b9-e2fe-41a6-bfd2-7de41f777d6e&quot;</span>, <span class="s2">&quot;ip_address&quot;</span>: <span class="s2">&quot;10.10.10.6&quot;</span><span class="o">}</span><span class="p">|</span>
+<span class="p">|</span> XXX <span class="p">|</span> <span class="o">{</span><span class="s2">&quot;subnet_id&quot;</span>: <span class="s2">&quot;1667e8b9-e2fe-41a6-bfd2-7de41f777d6e&quot;</span>, <span class="s2">&quot;ip_address&quot;</span>: <span class="s2">&quot;10.10.10.5&quot;</span><span class="o">}</span><span class="p">|</span>
+<span class="p">|</span> XXX <span class="p">|</span> <span class="o">{</span><span class="s2">&quot;subnet_id&quot;</span>: <span class="s2">&quot;db05f7e4-2d48-4d86-8089-d9e164f86ca8&quot;</span>, <span class="s2">&quot;ip_address&quot;</span>: <span class="s2">&quot;20.10.10.6&quot;</span><span class="o">}</span><span class="p">|</span>
+<span class="p">|</span> XXX <span class="p">|</span> <span class="o">{</span><span class="s2">&quot;subnet_id&quot;</span>: <span class="s2">&quot;db05f7e4-2d48-4d86-8089-d9e164f86ca8&quot;</span>, <span class="s2">&quot;ip_address&quot;</span>: <span class="s2">&quot;20.10.10.4&quot;</span><span class="o">}</span><span class="p">|</span>
+<span class="p">|</span> XXX <span class="p">|</span> <span class="o">{</span><span class="s2">&quot;subnet_id&quot;</span>: <span class="s2">&quot;1667e8b9-e2fe-41a6-bfd2-7de41f777d6e&quot;</span>, <span class="s2">&quot;ip_address&quot;</span>: <span class="s2">&quot;10.10.10.4&quot;</span><span class="o">}</span><span class="p">|</span>
+<span class="p">|</span> XXX <span class="p">|</span> <span class="o">{</span><span class="s2">&quot;subnet_id&quot;</span>: <span class="s2">&quot;db05f7e4-2d48-4d86-8089-d9e164f86ca8&quot;</span>, <span class="s2">&quot;ip_address&quot;</span>: <span class="s2">&quot;20.10.10.5&quot;</span><span class="o">}</span><span class="p">|</span>
++-----+----------------------------------------------------------------------------------+
+$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; <span class="c1">#...................................................................</span>
+</code></pre></div>
+
+
+<p>As part of this section, we have created our network infrastructure as promised in the beginning of this section. This shows that with the help of Neutron Networks, Subnets and Ports, we can create a highly complex but flexible networking setup to match our needs.</p>
+<h2>Security Groups</h2>
+<p>In the previous section, even though the VMs are created and connected within same network, we might not be able to ping or ssh due to security groups. These are a virtual firewall for your compute instances to control inbound and outbound traffic. Security Groups in OpenStack are implemented per VM. You can create a bunch of security group rules and assign them to instances. There will be more in-depth details about security groups in future article of this series.</p>
+<p>Let’s list all security groups</p>
+<div class="highlight"><pre><span></span><code>$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; nova secgroup-list
++--------------------------------------+----------+----------------+
+<span class="p">|</span> Id                                   <span class="p">|</span> Name     <span class="p">|</span> Description    <span class="p">|</span>
++--------------------------------------+----------+----------------+
+<span class="p">|</span> 4be520ef-58ad-4fa2-a471-2721290b88d7 <span class="p">|</span> default  <span class="p">|</span> default        <span class="p">|</span>
++--------------------------------------+----------+----------------+
+$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; <span class="c1">#...................................................................</span>
+</code></pre></div>
+
+
+<p>And to list each rules for one such security group default</p>
+<div class="highlight"><pre><span></span><code>$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; nova secgroup-list-rules default
++----------------+-----------+---------+------------+--------------+
+<span class="p">|</span> IP Protocol    <span class="p">|</span> From Port <span class="p">|</span> To Port <span class="p">|</span> IP Range   <span class="p">|</span> Source Group <span class="p">|</span>
++----------------+-----------+---------+------------+--------------+
+<span class="p">|</span>                <span class="p">|</span>           <span class="p">|</span>         <span class="p">|</span> default    <span class="p">|</span>              <span class="p">|</span>
+<span class="p">|</span> icmp           <span class="p">|</span> -1        <span class="p">|</span> -1      <span class="p">|</span> <span class="m">0</span>.0.0.0/0  <span class="p">|</span>              <span class="p">|</span>
+<span class="p">|</span> tcp            <span class="p">|</span> <span class="m">1</span>         <span class="p">|</span> <span class="m">65535</span>   <span class="p">|</span> <span class="m">0</span>.0.0.0/0  <span class="p">|</span>              <span class="p">|</span>
+<span class="p">|</span>                <span class="p">|</span>           <span class="p">|</span>         <span class="p">|</span>            <span class="p">|</span> default      <span class="p">|</span>
+<span class="p">|</span> udp            <span class="p">|</span> <span class="m">1</span>         <span class="p">|</span> <span class="m">65535</span>   <span class="p">|</span> <span class="m">0</span>.0.0.0/0  <span class="p">|</span>              <span class="p">|</span>
++----------------+-----------+---------+-------------+-------------+
+$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; <span class="c1">#...................................................................</span>
+</code></pre></div>
+
+
+<p>Let’s find out security group of any one of VM.</p>
+<div class="highlight"><pre><span></span><code>$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; nova show greenboxes-b2647e00-81e3-4290-b9c3-ce5e584c7265 <span class="p">|</span> grep security_groups
+<span class="p">|</span> security_groups                      <span class="p">|</span> default                   <span class="p">|</span>
+$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; <span class="c1">#...................................................................</span>
+</code></pre></div>
+
+
+<p>This suggests, our VM1 (greenboxes-b2647e00-81e3-4290-b9c3-ce5e584c7265) is booted with default security group. Now let’s add a rule to default to allow ssh connections(port 22).</p>
+<div class="highlight"><pre><span></span><code>$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; nova secgroup-add-rule default tcp <span class="m">22</span> <span class="m">22</span> <span class="m">0</span>.0.0.0/0
++----------------+-----------+---------+------------+------------+
+<span class="p">|</span> IP Protocol    <span class="p">|</span> From Port <span class="p">|</span> To Port <span class="p">|</span> IP Range <span class="p">|</span> Source Group <span class="p">|</span>
++----------------+-----------+---------+------------+------------+
+<span class="p">|</span> tcp            <span class="p">|</span> <span class="m">22</span>        <span class="p">|</span> <span class="m">22</span>      <span class="p">|</span> <span class="m">0</span>.0.0.0/0  <span class="p">|</span>            <span class="p">|</span>
++----------------+-----------+---------+------------+------------+
+$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; nova secgroup-list-rules default <span class="p">|</span> grep <span class="m">22</span>
+<span class="p">|</span> tcp            <span class="p">|</span> <span class="m">22</span>        <span class="p">|</span> <span class="m">22</span>      <span class="p">|</span> <span class="m">0</span>.0.0.0/0  <span class="p">|</span>            <span class="p">|</span>
+$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; <span class="c1">#...................................................................</span>
+</code></pre></div>
+
+
+<p>Listing security groups for default security groups, we can verify that default secgrup has a rule for port 22. This means on any virtual machines booted with default security group, port 22  will be open for incoming connection and hence we can make ssh connection. These security group rules are project specific, and project members can edit the default rules for their group and add new rules sets.</p>
+<h2>Routers</h2>
+<p>In the above diagram, instances within the network GREEN can talk to any other devices as long as they are in same network. This means that VM1 can send and receive packets from VM2, but not from VM3 or VM4. To provide connectivity between two different networks, routers come into the picture.</p>
+<p>Routers are logical networking components which</p>
+<ul>
+<li>forward data packets between networks,</li>
+<li>provide L3 and NAT forwarding to provide external access for VMs on tenant networks.</li>
+</ul>
+<p>Let’s demo these two features of routers. In this section, we will introduce a new router. Attach one end of each network to a router so that they are connected. Then we will create a dummy external network and make this router a gateway. This way all our VMs can communicate with the outside world. At the end of this section, we will have a setup as shown below.</p>
+<p><img alt="neutron01_4" src="images/neutron01_4.png"></p>
+<p>To connect any two networks we need a router. Let’s create an external virtual router named EXT_VR.</p>
+<div class="highlight"><pre><span></span><code>$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; neutron router-create EXT_VR
+Created a new router:
++-----------------------+--------------------------------------+
+<span class="p">|</span> Field                 <span class="p">|</span> Value                                <span class="p">|</span>
++-----------------------+--------------------------------------+
+<span class="p">|</span> admin_state_up        <span class="p">|</span> True                                 <span class="p">|</span>
+<span class="p">|</span> distributed           <span class="p">|</span> False                                <span class="p">|</span>
+<span class="p">|</span> external_gateway_info <span class="p">|</span>                                      <span class="p">|</span>
+<span class="p">|</span> ha                    <span class="p">|</span> False                                <span class="p">|</span>
+<span class="p">|</span> id                    <span class="p">|</span> c326b2b4-9076-4e12-9850-77d5f1c66c86 <span class="p">|</span>
+<span class="p">|</span> name                  <span class="p">|</span> EXT_VR                               <span class="p">|</span>
+<span class="p">|</span> routes                <span class="p">|</span>                                      <span class="p">|</span>
+<span class="p">|</span> status                <span class="p">|</span> ACTIVE                               <span class="p">|</span>
+<span class="p">|</span> tenant_id             <span class="p">|</span> 34609d0ea9ce48f98145ecc5bbac9f77     <span class="p">|</span>
++-----------------------+--------------------------------------+
+$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; <span class="c1">#...................................................................</span>
+</code></pre></div>
+
+
+<p>Now we need to add the virtual interfaces of each network to this recently created router EXT_VR. This way we can have a network with multiple subnets and decide which subnet to connect to router.</p>
+<div class="highlight"><pre><span></span><code>$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; neutron subnet-list -c id -c name -c cidr
++--------------------------------------+----------+---------------+
+<span class="p">|</span> id                                   <span class="p">|</span> name     <span class="p">|</span> cidr          <span class="p">|</span>
++------------ -------------------------+----------+---------------+
+<span class="p">|</span> 1667e8b9-e2fe-41a6-bfd2-7de41f777d6e <span class="p">|</span> 10_10_10 <span class="p">|</span> <span class="m">10</span>.10.10.0/24 <span class="p">|</span>
+<span class="p">|</span> db05f7e4-2d48-4d86-8089-d9e164f86ca8 <span class="p">|</span> 20_10_10 <span class="p">|</span> <span class="m">20</span>.10.10.0/24 <span class="p">|</span>
++--------------------------------------+----------+---------------+
+$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; neutron router-interface-add c326b2b4-9076-4e12-9850-77d5f1c66c86 10_10_10
+Added interface 64b09b83-1500-4caf-b9ea-ea4c8ec127d7 to router c326b2b4-9076-4e12-9850-77d5f1c66c86.
+$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; neutron router-interface-add c326b2b4-9076-4e12-9850-77d5f1c66c86 20_10_10
+Added interface 0b1e3767-363e-49ba-8ee9-33c02db354bc to router c326b2b4-9076-4e12-9850-77d5f1c66c86.
+$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; <span class="c1">#...................................................................</span>
+</code></pre></div>
+
+
+<p>Now that both these networks are connected through router EXT_VR, we can verify connectivity.</p>
+<div class="highlight"><pre><span></span><code>$ cirros@vm1 $  ping -c <span class="m">2</span> <span class="m">10</span>.10.10.6
+PING <span class="m">10</span>.10.10.6 <span class="o">(</span><span class="m">10</span>.10.10.6<span class="o">)</span> <span class="m">56</span><span class="o">(</span><span class="m">84</span><span class="o">)</span> bytes of data.
+<span class="m">64</span> bytes from <span class="m">10</span>.10.10.6: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">1</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">64</span> <span class="nv">time</span><span class="o">=</span><span class="m">0</span>.102 ms
+<span class="m">64</span> bytes from <span class="m">10</span>.10.10.6: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">2</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">64</span> <span class="nv">time</span><span class="o">=</span><span class="m">0</span>.120 ms
+--- <span class="m">10</span>.10.10.6 ping statistics ---
+<span class="m">2</span> packets transmitted, <span class="m">2</span> received, <span class="m">0</span>% packet loss, <span class="nb">time</span> 999ms
+rtt min/avg/max/mdev <span class="o">=</span> <span class="m">0</span>.102/0.111/0.120/0.009 ms
+$ cirros@vm1 $
+$ cirros@vm1 $  ping -c <span class="m">2</span> <span class="m">20</span>.10.10.5
+PING <span class="m">20</span>.10.10.5 <span class="o">(</span><span class="m">20</span>.10.10.5<span class="o">)</span> <span class="m">56</span><span class="o">(</span><span class="m">84</span><span class="o">)</span> bytes of data.
+<span class="m">64</span> bytes from <span class="m">20</span>.10.10.5: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">1</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">64</span> <span class="nv">time</span><span class="o">=</span><span class="m">0</span>.132 ms
+<span class="m">64</span> bytes from <span class="m">20</span>.10.10.5: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">2</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">64</span> <span class="nv">time</span><span class="o">=</span><span class="m">0</span>.180 ms
+--- <span class="m">20</span>.10.10.5 ping statistics ---
+<span class="m">2</span> packets transmitted, <span class="m">2</span> received, <span class="m">0</span>% packet loss, <span class="nb">time</span> 999ms
+rtt min/avg/max/mdev <span class="o">=</span> <span class="m">0</span>.132/0.156/0.180/0.024 ms
+$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; <span class="c1">#...................................................................</span>
+</code></pre></div>
+
+
+<p>Even though we can see connectivity between virtual machines across different networks, there is still no Internet connectivity. Packets flowing from virtual machines can still not reach to any outside network. Our current state of network infrastructure looks like</p>
+<p><img alt="neutron01_4_02" src="images/neutron01_4_02.png"></p>
+<p>Here two networks (RED &amp; GREEN) are connected to the router but there is no connectivity between the router and the Internet as shown above. To do that we need to set this router as a gateway, which means connecting one interface of the router to the external network. In our case we have an existing external network, and we will add this network as a gateway for this router.</p>
+<div class="highlight"><pre><span></span><code>$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; neutron router-gateway-set EXT_VR ext
+$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; <span class="c1">#...................................................................</span>
+</code></pre></div>
+
+
+<p>This will create a new port which will attach the external network to the router. Let’s verify this</p>
+<div class="highlight"><pre><span></span><code>$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; neutron port-list -c id -c fixed_ips
++----+----------------------------------------------------------------------------------------+
+<span class="p">|</span> id <span class="p">|</span> fixed_ips                                                                              <span class="p">|</span>
++----+----------------------------------------------------------------------------------------+
+<span class="p">|</span> XX <span class="p">|</span> <span class="o">{</span><span class="s2">&quot;subnet_id&quot;</span>: <span class="s2">&quot;1667e8b9-e2fe-41a6-bfd2-7de41f777d6e&quot;</span>, <span class="s2">&quot;ip_address&quot;</span>: <span class="s2">&quot;10.10.10.6&quot;</span><span class="o">}</span>      <span class="p">|</span>
+<span class="p">|</span> XX <span class="p">|</span>  <span class="o">{</span><span class="s2">&quot;subnet_id&quot;</span>: <span class="s2">&quot;acd4141a-149d-4a11-80bb-17eabaf0149f&quot;</span>, <span class="s2">&quot;ip_address&quot;</span>: <span class="s2">&quot;192.168.100.104&quot;</span><span class="o">}</span><span class="p">|</span>
+<span class="p">|</span> XX <span class="p">|</span> <span class="o">{</span><span class="s2">&quot;subnet_id&quot;</span>: <span class="s2">&quot;1667e8b9-e2fe-41a6-bfd2-7de41f777d6e&quot;</span>, <span class="s2">&quot;ip_address&quot;</span>: <span class="s2">&quot;10.10.10.5&quot;</span><span class="o">}</span>      <span class="p">|</span>
+<span class="p">|</span> XX <span class="p">|</span> <span class="o">{</span><span class="s2">&quot;subnet_id&quot;</span>: <span class="s2">&quot;1667e8b9-e2fe-41a6-bfd2-7de41f777d6e&quot;</span>, <span class="s2">&quot;ip_address&quot;</span>: <span class="s2">&quot;10.10.10.1&quot;</span><span class="o">}</span>      <span class="p">|</span>
+<span class="p">|</span> XX <span class="p">|</span> <span class="o">{</span><span class="s2">&quot;subnet_id&quot;</span>: <span class="s2">&quot;db05f7e4-2d48-4d86-8089-d9e164f86ca8&quot;</span>, <span class="s2">&quot;ip_address&quot;</span>: <span class="s2">&quot;20.10.10.6&quot;</span><span class="o">}</span>      <span class="p">|</span>
+<span class="p">|</span> XX <span class="p">|</span> <span class="o">{</span><span class="s2">&quot;subnet_id&quot;</span>: <span class="s2">&quot;db05f7e4-2d48-4d86-8089-d9e164f86ca8&quot;</span>, <span class="s2">&quot;ip_address&quot;</span>: <span class="s2">&quot;20.10.10.4&quot;</span><span class="o">}</span>      <span class="p">|</span>
+<span class="p">|</span> XX <span class="p">|</span> <span class="o">{</span><span class="s2">&quot;subnet_id&quot;</span>: <span class="s2">&quot;1667e8b9-e2fe-41a6-bfd2-7de41f777d6e&quot;</span>, <span class="s2">&quot;ip_address&quot;</span>: <span class="s2">&quot;10.10.10.4&quot;</span><span class="o">}</span>      <span class="p">|</span>
+<span class="p">|</span> XX <span class="p">|</span> <span class="o">{</span><span class="s2">&quot;subnet_id&quot;</span>: <span class="s2">&quot;db05f7e4-2d48-4d86-8089-d9e164f86ca8&quot;</span>, <span class="s2">&quot;ip_address&quot;</span>: <span class="s2">&quot;20.10.10.5&quot;</span><span class="o">}</span>      <span class="p">|</span>
+<span class="p">|</span> XX <span class="p">|</span>  <span class="o">{</span><span class="s2">&quot;subnet_id&quot;</span>: <span class="s2">&quot;acd4141a-149d-4a11-80bb-17eabaf0149f&quot;</span>, <span class="s2">&quot;ip_address&quot;</span>: <span class="s2">&quot;192.168.100.105&quot;</span><span class="o">}</span><span class="p">|</span>
+<span class="p">|</span> XX <span class="p">|</span> <span class="o">{</span><span class="s2">&quot;subnet_id&quot;</span>: <span class="s2">&quot;db05f7e4-2d48-4d86-8089-d9e164f86ca8&quot;</span>, <span class="s2">&quot;ip_address&quot;</span>: <span class="s2">&quot;20.10.10.1&quot;</span><span class="o">}</span>      <span class="p">|</span>
++----+----------------------------------------------------------------------------------------+
+$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; <span class="c1">#...................................................................</span>
+</code></pre></div>
+
+
+<p>As we can see, there are two new ports (for 192.168.100.104 and for 192.168.100.105). These are the two new connection points, one attached router to external network and other external network to Internet. And now packets from inside the virtual machine can reach the internet.</p>
+<h2>Floating IPs</h2>
+<p>We have seen that the VMs from the previous step are able to reach outside public networks. But the opposite is not yet possible, we cannot reachthe VMs from an outside network. Any packet directed to say VM1 (having private IP 10.10.0.5) reaches the outside router but this gateway router has no way to distinguish target VM. Let’s try to understand this in more detail.</p>
+<p><img alt="neutron01_5_1.png" src="images/neutron01_5-1.png"></p>
+<p>The above diagram is similar to our previous network infrastructure. Initially we try sending a packet from VM1 to an outside machine (with IP 56.57.58.59). Since VM1 is connected to the virtual router for external connectivity, the packet is able to reach the virtual router with a source IP of 10.10.10.5 and a target IP of 56.57.58.59. Our virtual external router EXT_VR then changes the source IP to its own IP address (192.168.0.19) and sends the packets to the correct destination. This is possible by sourcenet.</p>
+<p>But for packet transfer from any outside source to any one of the VMs, packets can reach our external virtual router EXT_VR using the router’s public IP address. But based on the information provided in the packets, the virtual router has no way to identify the target VM.</p>
+<p>One way to allow connectivity for a VM from outside networks is creating public IPs for each of the VMs. But this is not maintainable in the long term. In general we want our VMs to be disconnected from the public network except occasionally. Using public IPs per VM will lead us to a situation where we have to maintain a large pool of IPs per VM.</p>
+<blockquote>
+<p>Floating IPs are routable public IPs which can be assigned to a VM and revoked again. This is maintained on the router level.</p>
+</blockquote>
+<p>As part of this section, let’s generate some floating IPs in the public network EXT. Then we will dynamically assign them to VM1 and verify connectivity.</p>
+<div class="highlight"><pre><span></span><code>$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; neutron floatingip-list
+$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; neutron floatingip-create ext
+Created a new floatingip:
++---------------------+----------------------------------------+
+<span class="p">|</span> Field               <span class="p">|</span> Value                                  <span class="p">|</span>
++---------------------+----------------------------------------+
+<span class="p">|</span> fixed_ip_address    <span class="p">|</span>                                        <span class="p">|</span>
+<span class="p">|</span> floating_ip_address <span class="p">|</span> <span class="m">192</span>.168.100.103                        <span class="p">|</span>
+<span class="p">|</span> floating_network_id <span class="p">|</span> 4901039d-07b1-4ebf-91f1-559dd657e034   <span class="p">|</span>
+<span class="p">|</span> id                  <span class="p">|</span> 02ff1d61-6280-4f25-a8ff-9e5676ece01d   <span class="p">|</span>
+<span class="p">|</span> port_id             <span class="p">|</span>                                        <span class="p">|</span>
+<span class="p">|</span> router_id           <span class="p">|</span>                                        <span class="p">|</span>
+<span class="p">|</span> status              <span class="p">|</span> DOWN                                   <span class="p">|</span>
+<span class="p">|</span> tenant_id           <span class="p">|</span> 34609d0ea9ce48f98145ecc5bbac9f77       <span class="p">|</span>
++---------------------+----------------------------------------+
+$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; neutron floatingip-associate 02ff1d61-6280-4f25-a8ff-9e5676ece01d 378956ec-3928-4e06-873c-423b7f017695
+$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt;
+$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; neutron floatingip-list -c id -c fixed_ip_address -c floating_ip_address
++---------------------- ---------------+------------------+---------------------+
+<span class="p">|</span> id                                   <span class="p">|</span> fixed_ip_address <span class="p">|</span> floating_ip_address <span class="p">|</span>
++--------------------------------------+------------------+---------------------+
+<span class="p">|</span> 02ff1d61-6280-4f25-a8ff-9e5676ece01d <span class="p">|</span> <span class="m">10</span>.10.10.5       <span class="p">|</span> <span class="m">192</span>.168.100.103     <span class="p">|</span>
++--------------------------------------+------------------+---------------------+
+$ root@controller <span class="o">(</span>admin<span class="o">)</span> $&gt; <span class="c1">#...................................................................</span>
+</code></pre></div>
+
+
+<p>The initial neutron <code>floatingip-list</code> command gives no result. This means there is no existing floating ips. Then we generated a floating-ip on ext network. This IP will be randomly selected from the pool of network addresses for network ext. We find out the port of VM we want it to attach to. Using neutron <code>floatingip-associate</code>, we can associate this floating IP with a virtual machine port. This establishes the connection to VM1 from an outside network.</p>
+<h2>Conclusion</h2>
+<p>This brings us to the end of this large getting started with Neutron guide. We now have an understanding of how to create networks and subnets in an OpenStack cloud. We also looked at blocking traffic per virtual machine through the use of security groups. We saw how to connect different networks using L3 switching and routers, and we used floating IPs to allow external connectivity to virtual machines.</p>
+<p>If you’d like to know more, don’t forget to checkout our <a href="https://aptira.com/openstack-training/">OpenStack training</a> courses or <a href="https://aptira.com/contact/">contact us</a> with any questions.</p>
+	<hr class="post-end" />
+	<div id="disqus_thread"></div>
+		<script type="text/javascript">
+			var disqus_shortname = 'rajalokan';
+			(function() {
+	 			var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	 			dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+	 			(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	 		})();
+		</script>
+	<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+</div>
+		</div>
+	</body>
+</html>
